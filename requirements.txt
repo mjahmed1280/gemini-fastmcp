@@ -1,0 +1,4 @@
+streamlit
+requests
+fastmcp
+google-cloud-aiplatform
