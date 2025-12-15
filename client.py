@@ -2,6 +2,8 @@ import asyncio
 import os
 import json
 from contextlib import AsyncExitStack
+import logging
+import sys
 
 # Vertex AI Imports (Standard for Service Accounts)
 import vertexai
@@ -15,6 +17,22 @@ from vertexai.generative_models import (
 # MCP Imports
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+
+# Configure logging to show the background traffic
+logging.basicConfig(level=logging.DEBUG)
+logging.getLogger("mcp").setLevel(logging.DEBUG)
+# Force-enable logging for the specific session logic
+logging.getLogger("mcp.client.session").setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(levelname)s:%(name)s:%(message)s')
+# 2. Set up a handler that prints to the console (stderr)
+handler = logging.StreamHandler(sys.stderr)
+handler.setFormatter(formatter)
+
+# 3. Configure the MCP logger specifically
+mcp_logger = logging.getLogger("mcp")
+mcp_logger.setLevel(logging.DEBUG)
+mcp_logger.addHandler(handler)
+mcp_logger.propagate = False # Prevents double-logging if root is also active
 
 # --- CONFIGURATION ---
 KEY_PATH = "vertex-ai-sa.json"
@@ -56,7 +74,7 @@ async def run_chat():
     async with AsyncExitStack() as stack:
         print("🔌 Connecting to MCP Server...")
         
-        # CORRECTED LINES: Unpack the tuple into read/write streams
+        # Unpack the tuple into read/write streams
         read_stream, write_stream = await stack.enter_async_context(stdio_client(server_params))
         session = await stack.enter_async_context(ClientSession(read_stream, write_stream))
         
@@ -76,7 +94,7 @@ async def run_chat():
         chat = model.start_chat()
 
         # --- CHAT LOOP ---
-        user_input = "what function are avialbe tvia mcp"
+        user_input = "add 10 and 30"
         print(f"\n👤 User: {user_input}")
 
         # Send message
@@ -92,7 +110,8 @@ async def run_chat():
 
         if part.function_call:
             fn_call = part.function_call
-            print(f"🤖 Gemini (Vertex) wants to call: {fn_call.name} with {fn_call.args}")
+            # print(f"🤖 Gemini (Vertex) wants to call: {fn_call.name} with {fn_call.args}")
+            print(f"🤖 Gemini (Vertex) wants to call: {fn_call.name} with {dict(fn_call.args)}")
 
             # 5. Execute the tool via MCP
             # Note: Vertex args are a Map, we convert to standard dict
