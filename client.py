@@ -89,12 +89,17 @@ async def run_chat():
         
         model = GenerativeModel(
             "gemini-2.5-flash",
-            tools=[vertex_tool] # Vertex expects a list of Tool objects
+            tools=[vertex_tool], 
+            system_instruction=(
+                "You are an expert assistant. First, answer questions using your general knowledge."
+                "If a question is relevant to a tool (like complex math), use the provided tools."
+                "If a question is about factual information (like 'latest version of Python'), you must rely on your internal knowledge to naswer that. Do not mention your tools unless you intend to use them."
+            )
         )
         chat = model.start_chat()
 
         # --- CHAT LOOP ---
-        user_input = "add 10 and 30"
+        user_input = "what is the latest version of python as per your knowlege"
         print(f"\n👤 User: {user_input}")
 
         # Send message
